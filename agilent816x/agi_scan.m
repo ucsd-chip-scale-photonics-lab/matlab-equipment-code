@@ -1,4 +1,4 @@
-%% Function to trigger wavelength sweep on Agilent 8164b, after configured using laser_scan_setup
+%% NOT YET MIGRATED Trigger wavelength sweep on Agilent 816x, after configured using laser_scan_setup
 function [lambda,pow] = agi_scan(agi,N)
     % N: number of points in sweep (returned by laser_scan_setup)
     % SIDENOTE: COMMAND TO READ ERROR QUEUE: query(laser, "syst:err?")
@@ -120,33 +120,6 @@ function [lambda,pow] = agi_scan(agi,N)
     str = upper('sour0:pow:stat 0');
     fwrite(agi, str);
     fwrite(agi, '*WAI');
-    
-    
-    
-    
-    
-%     daq_time = daq_set(ds, lambda_i, lambda_f, sweep_speed,N); %#ok<NASGU>
-%     stop(ds); 
-    %x = zeros(ceil(N),1);
-    
-    
-%     for i =1:N
-%         x(i) = query(laser, 'fetc2:chan1:pow?','%s','%f');
-%     end
-%     
-%     
-%     
-%     [data,time] = ds.startForeground; 
-%     stop(ds);   % stops the acquisition
-    
-    %x = time;
-%     y = data;
-    
-    %pause(2);
-    
-    
-%     str = upper('sens1:func:res?');
-%     query(laser,str)
 end
 
     

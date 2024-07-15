@@ -23,7 +23,7 @@ function didFinish = agi_wait_for_logging(agi, estLoggingTime)
     % we'll reach the full number of loops is if logging never starts.
     didFinish = false;
     for waitIdx = 1:estLoggingTime
-        thisResponse = query(agi, ":SENS2:CHAN1:FUNC:STAT?");
+        thisResponse = writeread(agi, ":SENS2:CHAN1:FUNC:STAT?");
         fwrite(agi, '*WAI');
         if(strcmp(thisResponse, completeString))
             disp('Agilent complete!');

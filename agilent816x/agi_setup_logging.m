@@ -1,32 +1,32 @@
-function agi_setup_logging(agi, numPts, samplTime)
-    % Setup dual-channel power meter logging, e.g. for Venturi laser sweep
-    % this currently only triggers in response to a hardware trigger
-    % numPts: number of data points to capture (max 20,000)
-    % avgTime: period of data point capture in seconds, same as integration time
-    if(~isnumeric(numPts))
-        error("numPts input must be numeric!");
+function agi_setup_logging(agi, numPts, options)
+    % Setup dual-channel power meter logging
+    arguments
+        agi
+        numPts {mustBeNumeric} % number of data points to capture (max 20,000)
+        options.DetectorSlot (1,1) {mustBeInteger} = 2 % slot #
+        options.DetectorIntTime (1,1) {mustBeNumeric} = 1e-4 % period of data point capture in seconds, same as integration time b/c logging
     end
+
+    % check inputs a lil bit
     if(numPts > 20000)
         error("Number of points for Agilent power meter logging cannot exceeed 20,000");
     elseif(numPts < 1)
         error("Number of points for Agilent power meter logging must be at least 1");
     end
-    if(~isnumeric(samplTime))
-        error("samplTime input must be numeric!");
-    end
-    if(samplTime < 1e-4)
+    if(options.DetectorIntTime < 1e-4)
         error("samplTime (%1.0f us) must be >= 100 us (cannot collect samples faster than 10 kHz)!", 1e6*samplTime)
     end
-    % stop any logging that's in progress
-    fwrite(agi, ":SENS2:CHAN1:FUNC:STAT LOGG,STOP");
-    % setting this on channel 1 (master) also sets for channel 2
-    sendStr = sprintf(":SENS2:CHAN1:FUNC:PAR:LOGG %d, %f", ...
-        numPts, samplTime);
-    fwrite(agi, sendStr);
-    %fwrite(laser, '*WAI');
-    % check that it actually did what we want
 
-    readParamString = query(agi, ":SENS2:CHAN1:FUNC:PAR:LOGG?");
+    % stop any logging that's in progress
+    write(agi, sprintf(":SENS%d:CHAN1:FUNC:STAT LOGG,STOP", options.DetectorSlot));
+
+    % enable logging
+    sendStr = sprintf(":SENS%d:CHAN1:FUNC:PAR:LOGG %d, %f", ...
+        options.DetectorSlot, numPts, options.DetectorIntTime);
+    fwrite(agi, sendStr);
+    
+    % check that it actually did what we want
+    readParamString = writeread(sprintf(agi, ":SENS%d:CHAN1:FUNC:PAR:LOGG?", options.DetectorSlot));
     readStringSplit = split(readParamString,',');
     readNumSamples = str2double(readStringSplit{1});
     if(readNumSamples ~= numPts)
@@ -51,7 +51,5 @@ function agi_setup_logging(agi, numPts, samplTime)
             '350-499 us do not work, because they round up to 500 us.'], ...
             readIntTime*1e3, samplTime*1e3);
     end
-    
-
 end
 
