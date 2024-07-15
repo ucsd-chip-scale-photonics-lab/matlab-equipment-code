@@ -90,8 +90,8 @@ function N = agi_scan_setup(agi,options)
     if(options.DoManualN)
         N = (options.LambdaStop - options.LambdaStart)/options.LambdaStep + 1;
     else
-        for
-        N = writeread(agi,'sour0:wav:swe:exp?','%s','%d');
+        formatString = sprintf('sour%d:wav:swe:exp?', options.LaserSlot);
+        N = writeread(agi,formatString,'%s','%d');
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%

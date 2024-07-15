@@ -23,7 +23,7 @@ function agi_setup_logging(agi, numPts, options)
     % enable logging
     sendStr = sprintf(":SENS%d:CHAN1:FUNC:PAR:LOGG %d, %f", ...
         options.DetectorSlot, numPts, options.DetectorIntTime);
-    fwrite(agi, sendStr);
+    write(agi, sendStr);
     
     % check that it actually did what we want
     readParamString = writeread(sprintf(agi, ":SENS%d:CHAN1:FUNC:PAR:LOGG?", options.DetectorSlot));
