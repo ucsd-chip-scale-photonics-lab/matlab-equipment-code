@@ -18,7 +18,6 @@ function N = agi_scan_setup(agi,options)
     
     % TODO better controllability of both detector channels in one slot
 
-
     % Trigger from laser goes to power meter
     write(agi, 'trig:conf loop');
     %fwrite(agi, '*WAI');
@@ -88,10 +87,10 @@ function N = agi_scan_setup(agi,options)
     % workaround for a broken 8164 that returns bogus result on the swe:exp
     % query
     if(options.DoManualN)
-        N = (options.LambdaStop - options.LambdaStart)/options.LambdaStep + 1;
+        N = (options.SweepStop - options.SweepStart)/options.SweepStep + 1;
     else
         formatString = sprintf('sour%d:wav:swe:exp?', options.LaserSlot);
-        N = writeread(agi,formatString,'%s','%d');
+        N = str2double(writeread(agi,formatString));
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%

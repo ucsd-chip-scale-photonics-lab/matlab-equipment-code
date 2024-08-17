@@ -1,8 +1,9 @@
-function didFinish = agi_wait_for_logging(agi, estLoggingTime)
+function didFinish = agi_wait_for_logging(agi, options)
     % poke Agilent until sweep is finished, return true if it finished in
-    % expected amount of time
-    if ~exist('maxWaitTime', 'var')
-        estLoggingTime = 15;
+    arguments
+        agi
+        options.EstLoggingTime (1,1) {mustBeNumeric} = 15
+        options.DetectorSlot (1,1) {mustBeInteger} = 2
     end
 
     % once the logging starts, the VISA communication line will become
@@ -22,8 +23,9 @@ function didFinish = agi_wait_for_logging(agi, estLoggingTime)
     % actually starts, the query will hang until it finishes. The only time
     % we'll reach the full number of loops is if logging never starts.
     didFinish = false;
+    commandStr = sprintf(":SENS%d:CHAN1:FUNC:STAT?", options.DetectorSlot);
     for waitIdx = 1:estLoggingTime
-        thisResponse = writeread(agi, ":SENS2:CHAN1:FUNC:STAT?");
+        thisResponse = writeread(agi, commandStr);
         fwrite(agi, '*WAI');
         if(strcmp(thisResponse, completeString))
             disp('Agilent complete!');
