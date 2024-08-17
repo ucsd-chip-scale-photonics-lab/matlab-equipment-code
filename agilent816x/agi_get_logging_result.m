@@ -7,8 +7,10 @@ function [channel1, channel2] = agi_get_logging_result(agi, options)
         options.DetectorSlot (1,1) {mustBeInteger} = 2
     end
 
+    %agi_download_float_array(agi, sprintf("sens%d:chan%d:func:res?", slot, channel, options)
+
     % do an initial query to know # of bytes to read
-    queryResult = writeread(agi,sprintf('sens%d:chan1:func:res?', options.DetectorSlot));
+    queryResult = char(writeread(agi,sprintf('sens%d:chan1:func:res?', options.DetectorSlot)));
     if(char(queryResult(1)) ~= '#') %
         error("Logging result did not start with a #:" + dataIn);
     end
@@ -21,14 +23,15 @@ function [channel1, channel2] = agi_get_logging_result(agi, options)
     % must add a few bytes to the beginning since the beginning of the
     % buffer has that stuff we just used above
     extraBytes = 2 + numDigits;
-    channel1 = getChannelResults(agi, 1, extraBytes, numBytes);
-    channel2 = getChannelResults(agi, 2, extraBytes, numBytes);
+    channel1 = getChannelResults(agi, options.DetectorSlot, 1, extraBytes, numBytes);
+    channel2 = getChannelResults(agi, options.DetectorSlot, 2, extraBytes, numBytes);
 end
 
 
-function readingArray = getChannelResults(agi, channel, extraBytes, numBytes)
+function readingArray = getChannelResults(agi, slot, channel, extraBytes, numBytes)
     % channel must be 1 or 2 (number)
-    writeString = sprintf("sens%d:chan%d:func:res?", options.DetectorSlot, channel);
+    writeString = sprintf("sens%d:chan%d:func:res?", slot, channel);
+    agi.InputBufferSize = extraBytes + numBytes + 100;
     write(agi,writeString);
     dataIn = fread(agi,extraBytes+numBytes,'uint8');
     % power meter readings have 4 bytes

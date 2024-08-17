@@ -26,7 +26,7 @@ function agi_setup_logging(agi, numPts, options)
     write(agi, sendStr);
     
     % check that it actually did what we want
-    readParamString = writeread(sprintf(agi, ":SENS%d:CHAN1:FUNC:PAR:LOGG?", options.DetectorSlot));
+    readParamString = writeread(agi, sprintf(":SENS%d:CHAN1:FUNC:PAR:LOGG?", options.DetectorSlot));
     readStringSplit = split(readParamString,',');
     readNumSamples = str2double(readStringSplit{1});
     if(readNumSamples ~= numPts)
@@ -39,7 +39,7 @@ function agi_setup_logging(agi, numPts, options)
     % if it rounds to an integration time longer than the logging, the
     % result will be glitchy (because it triggers measurements faster than
     % it can take them).
-    if(readIntTime > samplTime)
+    if(readIntTime > options.DetectorIntTime)
         error(['Agilent detector integration time (%1.1f ms) exceeds ' ...
             'requested sampling period (%1.3f ms)! ' ...
             'This is caused when the Agilent detector rounds up the ' ...
