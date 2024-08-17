@@ -9,7 +9,7 @@ function didFinish = agi_wait_for_logging(agi, options)
     % once the logging starts, the VISA communication line will become
     % unresponsive until it finishes. So we should increase the VISA
     % timeout to a little more than the estimated duration of logging
-    agi.Timeout = estLoggingTime + 3; 
+    agi.Timeout = options.EstLoggingTime + 3; 
     % if the logging starts, it is almost guaranteed that it will
     % eventually finish (in the absense of loss of connection etc.)
 
@@ -24,7 +24,7 @@ function didFinish = agi_wait_for_logging(agi, options)
     % we'll reach the full number of loops is if logging never starts.
     didFinish = false;
     commandStr = sprintf(":SENS%d:CHAN1:FUNC:STAT?", options.DetectorSlot);
-    for waitIdx = 1:estLoggingTime
+    for waitIdx = 1:options.EstLoggingTime
         thisResponse = writeread(agi, commandStr);
         fwrite(agi, '*WAI');
         if(strcmp(thisResponse, completeString))

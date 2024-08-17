@@ -8,9 +8,7 @@ function agi_setup_logging(agi, numPts, options)
     end
 
     % check inputs a lil bit
-    if(numPts > 20000)
-        error("Number of points for Agilent power meter logging cannot exceeed 20,000");
-    elseif(numPts < 1)
+    if(numPts < 1)
         error("Number of points for Agilent power meter logging must be at least 1");
     end
     if(options.DetectorIntTime < 1e-4)
@@ -32,6 +30,8 @@ function agi_setup_logging(agi, numPts, options)
     if(readNumSamples ~= numPts)
         warning("Number of points returned by Agilent during logging setup (%d) not equal to number we asked it to log (%d)", ...
         readNumSamples, numPts);
+        if(readNumSamples < numPts)
+            warning("This is likely because %d is the maximum number that this mainframe can log.", readNumSamples)
     end
     readIntTime = str2double(readStringSplit{2});
     % note: agilent rounds to nearest of the following integration times:
