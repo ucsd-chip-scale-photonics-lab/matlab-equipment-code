@@ -12,7 +12,7 @@ function agi_setup_logging(agi, numPts, options)
         error("Number of points for Agilent power meter logging must be at least 1");
     end
     if(options.DetectorIntTime < 1e-4)
-        error("samplTime (%1.0f us) must be >= 100 us (cannot collect samples faster than 10 kHz)!", 1e6*samplTime)
+        error("samplTime (%1.0f us) must be >= 100 us (cannot collect samples faster than 10 kHz)!", 1e6*options.DetectorIntTime)
     end
 
     % stop any logging that's in progress
