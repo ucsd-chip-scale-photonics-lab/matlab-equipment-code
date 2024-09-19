@@ -1,4 +1,7 @@
 function PIdevice = hexapod_connect()
+    % TODO catch error assocaited with not doing "ifs 100 ipmaxconn 2" and
+    % give sensible suggestion to user
+
     % Load drivers and connect to C-887 hexapod controller in CPTF 
     % There would be a lot of arguments to this if this code were used in
     % any other situation, but fortunately we only have one of these :)

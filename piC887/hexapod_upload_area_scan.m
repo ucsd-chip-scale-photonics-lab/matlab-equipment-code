@@ -1,7 +1,9 @@
 function hexapod_upload_area_scan(hexapod, options)
-    % this just wraps PI's own FDR function. The only purpose of this
-    % function is to set some sensible defaults for our system and remove
-    % a little clutter associated with making the AreaScanParameters object
+    % this just wraps PI's own FDR function, and adds a few minor things:
+    % - set some sensible defaults for our system
+    % - abstract away the clutter associated with making the AreaScanParameters object
+    % - string inputs instead of numbers for targetType, centroidMethod, stopPositionOption (TODO)
+    % - 
 
     % to run a scan, do hexapod.FRS('scan_name')
     arguments
@@ -29,13 +31,6 @@ function hexapod_upload_area_scan(hexapod, options)
     end
 
     %% Define Area Scan
-
-    % Warning: given values of this sample can damage your system
-    % adjust all values accordingly and remove the following line
-    %error('adjust FDR values to match your configuration');
-    % disp('define gradient scan routine...');
-    % PIdevice.FDR needs some parameters as plain text string. The following
-    % lines build this string from the parameters in struct 'AreaScan'.
     AreaScanParameters = ...
         [  'L ', num2str(options.thresholdLevel) ...
         , ' A ', num2str(options.alignmentSignalInputChannel) ...
