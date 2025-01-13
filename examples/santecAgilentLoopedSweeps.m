@@ -1,16 +1,14 @@
 %% TSL control
 clear; 
 % Laser
-dllPath = 'C:\Users\CSPTF-packaging\Equipment\matlab-equipment-code\santecTSL-550\Santec_FTDI.dll';
+dllPath = fullfile(pwd, 'matlab-equipment-code\santecTSL-550\Santec_FTDI.dll');
 asmInfo = NET.addAssembly(dllPath); pause(1);
 TSL = Santec_FTDI.FTD2xx_helper('20060036');
 pause(1);
 TSL.Query('*IDN?')
-
-
-%% connect to agilent 8163a
-delete(instrfindall);
-agi = agilent816x_start(Address = 'GPIB0::20::INSTR'); % note: this is a legacy function name for the 8164b
+% connect to agilent 8163a
+%delete(instrfindall);
+agi = agilent816x_start(Address = 'GPIB1::20::INSTR');
 
 
 %% Turn on laser
@@ -30,12 +28,12 @@ TSL.Query(strcat('LP',num2str(temp_pwr,'%.2f'))); pause(0.05)
 clear('temp_pwr')
 %% Loop sweeps to form a very high resolution spectrum
 % not limited by buffer size of power meter
-maxDataPoints = 20001;
-wvRes = 0.001; % nm
-wvStart = 1500; % nm
-wvEnd = 1580; % nm
-wvSpeed = 10; % nm/s
-agilent_detector_range_1 = -40; % dBm, multiple of 10 from -60 to 10
+maxDataPoints = 20000;
+wvRes = 0.0025; % nm
+wvStart = 1480; % nm
+wvEnd = 1630; % nm
+wvSpeed = 25; % nm/s
+agilent_detector_range_1 = -20; % dBm, multiple of 10 from -60 to 10
 agilent_detector_range_2 = -40;
 %
 % Calculate scan ranges
@@ -59,6 +57,7 @@ lambdaArrayLooped = cell(numScans, 1);
 channel1Looped = cell(numScans, 1);
 channel2Looped = cell(numScans, 1);
 %%
+acq_time = datetime;
 scanLow = wvStart;
 scanHigh = min(scanLow + maxScanRange, wvEnd);
 doSmartRange = false;
@@ -84,6 +83,7 @@ for i = 1:numScans
 end
 
 
+
 %% PLOTTING
 figure; hold on;
 for i = 1:numScans
@@ -96,10 +96,11 @@ xlabel("Wavelength");
 ylabel("Power (dBm)");
 
 %% save result
+
 [output_filename, output_path] = uiputfile('*', 'Select location to save data:');
 if(output_filename)
     %save(strcat(output_path,output_filename), 'wvs', 'channel1', 'channel2');
-    save(strcat(output_path,output_filename), 'lambdaArrayLooped', 'channel1Looped');
+    save(strcat(output_path,output_filename), 'lambdaArrayLooped', 'channel1Looped', 'acq_time');
 else
     disp("File save cancelled");
 end

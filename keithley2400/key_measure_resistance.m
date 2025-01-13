@@ -12,9 +12,9 @@ function resistance = key_measure_resistance(key)
     % fwrite(key, 'sens:res:mode AUTO');
     
     % turn on, take measurement, turn off
-    key_output(key, true);
+    %key_output(key, true);
     result_string = query(key, 'read?'); % voltage, current, resistance, time, status
-    key_output(key, false);
+    %key_output(key, false);
     
     % turn auto-ohm mode back off
     % fwrite(key, 'sens:res:mode MAN');

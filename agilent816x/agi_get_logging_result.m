@@ -12,7 +12,7 @@ function [channel1, channel2] = agi_get_logging_result(agi, options)
     % do an initial query to know # of bytes to read
     queryResult = char(writeread(agi,sprintf('sens%d:chan1:func:res?', options.DetectorSlot)));
     if(char(queryResult(1)) ~= '#') %
-        error("Logging result did not start with a #:" + dataIn);
+        error("Logging result did not start with a #:" + queryResult);
     end
     % number of digits in following number of bytes
     numDigits = str2double(queryResult(2));
@@ -31,16 +31,31 @@ end
 function readingArray = getChannelResults(agi, slot, channel, extraBytes, numBytes)
     % channel must be 1 or 2 (number)
     writeString = sprintf("sens%d:chan%d:func:res?", slot, channel);
-    agi.InputBufferSize = extraBytes + numBytes + 100;
-    write(agi,writeString);
-    dataIn = fread(agi,extraBytes+numBytes,'uint8');
-    % power meter readings have 4 bytes
-    bytesPerReading = 4;
-    numReadings = numBytes/bytesPerReading;
-    readingArray = zeros(1,numReadings);
-    for readingIdx = 1:numReadings
-        byteIdx = extraBytes+bytesPerReading*(readingIdx-1);
-        theseBytes = dataIn(byteIdx+1:byteIdx+4);
-        readingArray(readingIdx) = typecast(uint8(theseBytes), 'single');
+    % TCPIP connections automatically manage buffer size, don't do this
+    % for them
+    if(~isa(agi,'visalib.TCPIP'))
+        agi.InputBufferSize = extraBytes + numBytes + 100;
     end
+    while 1
+        write(agi,writeString);
+        dataIn = read(agi,extraBytes+numBytes,'uint8');
+        % power meter readings have 4 bytes
+        bytesPerReading = 4;
+        numReadings = numBytes/bytesPerReading;
+        readingArray = zeros(1,numReadings);
+        for readingIdx = 1:numReadings
+            byteIdx = extraBytes+bytesPerReading*(readingIdx-1);
+            theseBytes = dataIn(byteIdx+1:byteIdx+4);
+            readingArray(readingIdx) = typecast(uint8(theseBytes), 'single');
+        end
+        if(is_reading_corrupted(readingArray))
+            warning("Downloaded logging array corrupted, trying again.");
+        else
+            break;
+        end
+    end
+end
+
+function is_corrupted = is_reading_corrupted(reading)
+    is_corrupted = any(reading < -1); % can't have large negative powers!
 end

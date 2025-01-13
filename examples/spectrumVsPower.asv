@@ -1,0 +1,74 @@
+%%
+clear; delete(instrfindall);
+key = key_start();
+%%
+
+key_auto_ohm(key, true);
+key_output(key, true);
+pause(1);
+heater_R = key_measure_resistance(key);
+key_output(key, false);
+
+%% Setup sweep
+startWavelength = 1540; % nm
+stopWavelength = 1560; % nm
+sweepRate = 10; % nm/s
+wavelengthStep = 0.001; 
+laserPower = 5; % dBm, 0 to 9.9
+powerMeterRange1 = -20; % dBm, multiples of 10 from -60 to 10
+powerMeterRange2 = 10; % dBm, multiples of 10 from -60 to 10
+
+venturi_set_power(ven, laserPower);
+[actualRange, actualRate] = venturi_sweep_setup(ven, sweepRate, startWavelength, stopWavelength);
+% compute parameters to give to Agilent power meter logging
+% the points collected are not instantaneous - they average over the
+% interval spacing (for now, unless we set up Stability power meter mode)
+avgTime = wavelengthStep/actualRate;
+% as such, the calc below is not a fencepost error - our measurements are
+% the gaps, not the posts in the fence
+numPts = actualRange/wavelengthStep;
+% our array of wavelengths, then, is the CENTER of these gaps!
+lambdaArray = startWavelength + wavelengthStep*(0.5 + 0:(numPts));
+agi_set_range(agi, powerMeterRange1, DetectorChannel = 1);
+agi_set_range(agi, powerMeterRange2, DetectorChannel = 2);
+agi_setup_logging(agi, numPts, DetectorIntTime=avgTime);
+%%
+P_desired = (10:10:50)*1e-3;
+I_supply = sqrt(P_desired/heater_R);
+P_max = 50e-3;
+V_compliance = sqrt(P_max*heater_R);
+key_auto_ohm(key, false);
+key_config_I_source(key, V_compliance);
+
+%% run sweep
+[file_prefix, save_dir] = uiputfile('*', ...
+    'Select location and prefix where data will be saved:');
+if(~file_prefix)
+    error("You must select a save location");
+end
+
+key_set_I(key, 0);
+key_output(key, true);
+for heater_idx = 1:length(I_supply)
+    key_set_I(key, 1000*I_supply);
+
+    scanTime = numPts*avgTime;
+    max_wait_time = scanTime+5; % time to wait for agilent before timing out
+    laser.Timeout = max_wait_time;
+    agi_arm_logging(agi, TriggerType = "complete");
+    venturi_output(ven, true);
+    venturi_sweep_run(ven);
+    venturi_sweep_run(ven);
+    loggingSuccessful = agi_wait_for_logging(agi, EstLoggingTime = max_wait_time);
+    if(loggingSuccessful)
+        [channel1, channel2] = agi_get_logging_result(agi);
+        agi_reset_triggers(agi);
+    else
+        warning("Logging did not finish in alloted time.");
+    end
+
+    this_filename = sprintf('%s_%d.mat', file_prefix, round(this_lambda_nm));
+            save(fullfile(save_dir, this_filename), ...
+                'channel1', 'channel2', 'lambda', 'acq_struct', 'start_timestamp');
+end
+

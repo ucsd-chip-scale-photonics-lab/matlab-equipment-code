@@ -3,8 +3,8 @@ function resistance = kes_measure_resistance(kes, channel)
         channel = 1; % default to channel 1
     end
     % turn on, take measurement, turn off
-%     kes_output(kes, true);
-%     fwrite(kes, '*WAI?'); 
+    kes_output(kes, true);
+    fwrite(kes, '*WAI?'); 
     % enable resistance measurement
     fwrite(kes, sprintf('SENS%d:FUNC "RES"', channel));
     % Keysight turns on by itself, actually

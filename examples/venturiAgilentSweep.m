@@ -1,16 +1,17 @@
 % Program to collect spectra using Venturi 6600 swept laser and
 % dual-channel power meters (81635) on Agilent 8164B slot 2
 clear; delete(instrfindall);
-ven = venturi_connect();
-agi = start_laser(); % legacy function name, not using laser on Agilent
+ven = venturi_start();
+agi = agilent816x_start(Address = 'GPIB1::20::INSTR'); % legacy function name, not using laser on Agilent
 %% Setup sweep
-startWavelength = 1540; % nm
-stopWavelength = 1560; % nm
+startWavelength = 1520; % nm
+stopWavelength = 1630; % nm
 sweepRate = 10; % nm/s
-wavelengthStep = 0.0025; 
-laserPower = 9.9; % dBm, 0 to 9.9
-powerMeterRange1 = -60; % dBm, multiples of 10 from -60 to 10
+wavelengthStep = 0.01; 
+laserPower = 5; % dBm, 0 to 9.9
+powerMeterRange1 = -10; % dBm, multiples of 10 from -60 to 10
 powerMeterRange2 = 10; % dBm, multiples of 10 from -60 to 10
+
 
 venturi_set_power(ven, laserPower);
 [actualRange, actualRate] = venturi_sweep_setup(ven, sweepRate, startWavelength, stopWavelength);
@@ -23,31 +24,31 @@ avgTime = wavelengthStep/actualRate;
 numPts = actualRange/wavelengthStep;
 % our array of wavelengths, then, is the CENTER of these gaps!
 lambdaArray = startWavelength + wavelengthStep*(0.5 + 0:(numPts));
-agilent_set_range(agi, powerMeterRange1, 1);
-agilent_set_range(agi, powerMeterRange2, 2);
-agilent_setup_logging(agi, numPts, avgTime);
+agi_set_range(agi, powerMeterRange1, DetectorChannel = 1);
+agi_set_range(agi, powerMeterRange2, DetectorChannel = 2);
+agi_setup_logging(agi, numPts, DetectorIntTime=avgTime);
 %% run sweep
 scanTime = numPts*avgTime;
 max_wait_time = scanTime+5; % time to wait for agilent before timing out
 laser.Timeout = max_wait_time;
-agilent_arm_logging(agi);
+agi_arm_logging(agi, TriggerType = "complete");
 venturi_output(ven, true);
 venturi_sweep_run(ven);
 venturi_sweep_run(ven);
-loggingSuccessful = agilent_wait_for_logging(agi, max_wait_time);
+loggingSuccessful = agi_wait_for_logging(agi, EstLoggingTime = max_wait_time);
 if(loggingSuccessful)
-    [channel1, channel2] = agilent_get_logging_result(agi);
-    agilent_reset_triggers(agi);
+    [channel1, channel2] = agi_get_logging_result(agi);
+    agi_reset_triggers(agi);
 else
-    warning("Logging did not finish.");
+    warning("Logging did not finish in alloted time.");
 end
 %%
 figure; hold on;
-plot(lambdaArray, 10*log10(abs(channel1)) + 30);
+plot(lambdaArray, 10*log10(abs(channel1)) + 30 - laserPower);
 %plot(lambdaArray, 10*log10(channel2) + 30);
 hold off;
 xlabel("Wavelength");
-ylabel("Power (dBm)");
+ylabel("Transmission (dB)");
 %%
 figure; hold on;
 plot(lambdaArray, 10*log10(channel1./channel2));
