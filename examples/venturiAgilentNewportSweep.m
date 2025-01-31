@@ -11,7 +11,7 @@ stopWavelength = 1630; % nm
 sweepRate = 10; % nm/s
 wavelengthStep = 0.01; 
 laserPower = 5; % dBm, 0 to 9.9
-powerMeterRange1 = -10; % dBm, multiples of 10 from -60 to 10
+powerMeterRange1 = -20; % dBm, multiples of 10 from -60 to 10
 powerMeterRange2 = 10; % dBm, multiples of 10 from -60 to 10
 
 
@@ -32,7 +32,7 @@ agi_setup_logging(agi, numPts, DetectorIntTime=avgTime);
 
 % Newport settings
 newport_channel(np, 1);
-newportRangeW = 1e-3; % W
+newportRangeW = 1e-5; % W
 newport_range(np, newportRangeW);
 newport_setup_logging(np, numPts, SamplingPeriod = avgTime);
 %% run sweep
@@ -57,12 +57,15 @@ else
 end
 %%
 figure; hold on;
-plot(lambdaArray, 10*log10(abs(channel1)) + 30 - laserPower,'r.-');
-plot(lambdaArray, 10*log10(abs(newport_data)) + 30 - laserPower,'b.-');
+plot(lambdaArray, 10*log10(abs(channel1)) + 30,'r.-');
+plot(lambdaArray, 10*log10(abs(newport_data)) + 30,'b.-');
+%plot(lambdaArray, abs(channel1),'r.-');
+%plot(lambdaArray, abs(newport_data),'b.-');
 %plot(lambdaArray, 10*log10(channel2) + 30);
 hold off;
 xlabel("Wavelength");
 ylabel("Transmission (dB)");
+legend("Agilent detector", "Newport detector");
 %%
 figure; hold on;
 plot(lambdaArray, 10*log10(channel1./channel2));

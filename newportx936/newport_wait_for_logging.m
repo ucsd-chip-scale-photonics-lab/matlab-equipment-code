@@ -14,7 +14,7 @@ function didFinish = newport_wait_for_logging(np, options)
             didFinish = true;
             return;
         end
-        fprintf('%d...', current_count);
+        fprintf('%2.0f%%..', 100*current_count/buffer_size);
         pause(1); current_time = current_time + 1;
     end
     didFinish = false;
