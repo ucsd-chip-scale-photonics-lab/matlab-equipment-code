@@ -1,0 +1,56 @@
+function actual_period = newport_setup_logging(np, numPts, options)
+%NEWPORT_SETUP_LOGGING Setup buffered recording of power measurements
+
+    arguments
+        np
+        numPts {mustBeNumeric} % number of data points to capture (max 20,000)
+        options.SamplingPeriod (1,1) {mustBeNumeric} = 1e-4 % period of data point capture in seconds
+        % note: as far as I can tell, this newport box cannot handle arbitrary
+        % timing of measurements, and can only do multiples of 100 us. As such,
+        % this function picks the option closest to the specified
+        % LoggingPeriod, throws a warning if it's not exact, and also
+        % returns the actual interval used
+        % another note: because of this, I believe that the integration
+        % time does NOT change with the sampling period
+        
+    end
+    %
+    if(numPts < 0 || numPts > 250000)
+        error("Specified numPts %d out of acceptable range [1-250,000]", numPts);
+    end
+    
+    % enable Data Store mode
+    % newport_write(np, "PM:DS:ENABLE 1");
+    % fixed size buffer mode
+    newport_write(np, "PM:DS:BUFFER 0");
+
+
+    % "interval" is an integer that says how often we sample from the
+    % underlying 100 us sampling
+    UNDERLYING_SAMPLING = 1e-4;
+    if(options.SamplingPeriod < UNDERLYING_SAMPLING)
+        interval = 1;
+    else
+        interval = floor(options.SamplingPeriod/UNDERLYING_SAMPLING);
+    end
+    newport_write(np, sprintf("PM:DS:INTERVAL %d", interval));
+    actual_interval = str2double(newport_query(np, "PM:DS:INTERVAL?"));
+    actual_period = UNDERLYING_SAMPLING*actual_interval;
+    if(actual_period ~= options.SamplingPeriod)
+        warning("Actual sampling period %1.1e s does not match requested period %1.1e s - sampling periods are rounded to nearest multiple of underlying Newport sampling period of 100 us.", ...
+            actual_period, options.SamplingPeriod);
+    end
+
+    %
+    newport_write(np, sprintf("PM:DS:SIZE %d", numPts));
+    actual_num_pts = str2double(newport_query(np, "PM:DS:SIZE?"));
+    if(actual_num_pts ~= numPts)
+        warning("Actual number of samples %d does not match requested number %d.", actual_num_pts, numPts);
+    end
+
+    % always save power units (2 = Watts)
+   % newport_write(np, sprintf("PM:DS:UNITS 2"));
+
+
+end
+

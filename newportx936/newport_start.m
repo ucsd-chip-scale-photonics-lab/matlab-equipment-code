@@ -16,6 +16,8 @@ function np = newport_start()
     % get device ID of first one (for now, assume we only talk to 1 box)
     np.ID = alDevInfoList.Item(0).ID;
     % query ID to final confirm connection
-    newport_query(np, "*IDN?")
+    disp(newport_query(np, "*IDN?"));
+    % set units to watts, which is what is assumed throughout our code
+    newport_write(np, "PM:UNITS 2"); % 2 = Watts
 end
 
