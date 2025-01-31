@@ -1,0 +1,46 @@
+function newport_range(np, power_mW)
+%NEWPORT_RANGE Set PM range for the currently active channel
+% Switch 
+% The range will be set to the most sensitive range that doesn't saturate
+% the provided powers. Depending on the detector head attached to the unit,
+% the exact cutoffs differ, so we do a bit of chatting with the box to
+% figure out what's the best
+
+% If this fails, also provide a functionality to give index manually TODO
+
+RANGE_FACTOR = 10; % 10x increment between ranges in terms of power
+W_TO_mW = 1e3; % newport does powers in W, this function does mW
+% get current max power and range idx, then calculate needed range
+existing_max_mW = W_TO_mW*str2double(newport_query(np, 'PM:MAX:Power?'));
+
+if is_good_range(power_mW, existing_max_mW, RANGE_FACTOR)
+    % don't do anything if the range is already good
+    return
+end
+
+existing_range_idx = str2num(newport_query(np, "PM:RANGE?"));
+% this is the power corresponding to a range of "0"
+base_range_mW = existing_max_mW/RANGE_FACTOR^existing_range_idx;
+% calculate best index
+best_idx = ceil(logbase(RANGE_FACTOR, power_mW/base_range_mW));
+% write it
+newport_write(np, sprintf("PM:RANGE %d", best_idx));
+
+% check again
+existing_max_mW = W_TO_mW*str2double(newport_query(np, 'PM:MAX:Power?'));
+if is_good_range(power_mW, existing_max_mW, RANGE_FACTOR)
+    fprintf("Updated power meter range to %1.2e mW for specified power %1.2e mW\n", existing_max_mW, power_mW);
+else
+    warning("Updated power meter range %1.2e mW isn't actually the best range for desired power %f - you may be at the limits of the power meter, or my code is setting the power meter range wrong.", existing_max_mW, power_mW);
+end
+
+end
+
+function out = is_good_range(power_mW, existing_max_mW, RANGE_FACTOR)
+    out = power_mW < existing_max_mW && power_mW > existing_max_mW/RANGE_FACTOR;
+end
+
+function out = logbase(base, value)
+    % so silly that matlab doesn't have this
+    out = log2(value) / log2(base);
+end

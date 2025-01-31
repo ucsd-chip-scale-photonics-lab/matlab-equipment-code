@@ -13,7 +13,7 @@ for i = 1:numFiles
     %plot(lambdaArray, 10*log10(channel1), 'DisplayName', file{i});
     %plot_name = sprintf('%1.2f mW', V_measure*I_measure);
     plot_name = file{i};
-    plot(lambdaArray, 10*log10(channel1) +30 + 10*i, 'DisplayName', plot_name);
+    plot(lambdaArray, 10*log10(channel1) +30, 'DisplayName', plot_name);
     %plot(lambdaArray, 10*log10(channel1/max(channel1)), 'DisplayName', plot_name);
 end
 hold off;

@@ -7,7 +7,7 @@ agi = agilent816x_start(Address = 'GPIB1::20::INSTR'); % legacy function name, n
 startWavelength = 1520; % nm
 stopWavelength = 1630; % nm
 sweepRate = 10; % nm/s
-wavelengthStep = 0.01; 
+wavelengthStep = 0.1; 
 laserPower = 5; % dBm, 0 to 9.9
 powerMeterRange1 = -10; % dBm, multiples of 10 from -60 to 10
 powerMeterRange2 = 10; % dBm, multiples of 10 from -60 to 10
@@ -44,7 +44,7 @@ else
 end
 %%
 figure; hold on;
-plot(lambdaArray, 10*log10(abs(channel1)) + 30 - laserPower);
+plot(lambdaArray, 10*log10(abs(channel1)) + 30 - laserPower,'k.-');
 %plot(lambdaArray, 10*log10(channel2) + 30);
 hold off;
 xlabel("Wavelength");
