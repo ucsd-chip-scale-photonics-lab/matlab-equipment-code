@@ -15,15 +15,31 @@ function [lambdaRange, lambdaSpeed] = venturi_sweep_setup(ven, inRate, startWave
     if(~isnumeric(inRate))
         error("Sweep rate must be numeric!");
     end
-    
-    rateResponse = query(ven, sprintf(':CONF:SWEE:RATE %f', inRate));
-    setRate = str2double(venturi_extract_result(rateResponse));
-    if(abs(setRate - inRate) >= 0.1)
-        warning('Commanded Venturi to sweep rate %1.1f nm/s, actual rate set to %1.1f nm/s', ...
-            inRate, setRate);
+    % for some reason, the Venturi often gives a wrong response when we do
+    % the query in this section. As such, we try this many times, and if
+    % it gives a bad response that many times, only then do we throw an
+    % error
+    MAX_NUM_ATTEMPTS = 5;
+    num_attempts = 0;
+    while(num_attempts < MAX_NUM_ATTEMPTS)
+        rateResponse = query(ven, sprintf(':CONF:SWEE:RATE %f', inRate));
+        setRate = str2double(venturi_extract_result(rateResponse));
+        if(~isnan(setRate))
+            if(abs(setRate - inRate) >= 0.1)
+                warning('Commanded Venturi to sweep rate %1.1f nm/s, actual rate set to %1.1f nm/s', ...
+                    inRate, setRate);
+            end
+            break;
+        end
+        if(num_attempts == 0)
+            warning("Sweep rate command didn't work first time, retrying...");
+        else
+            warning("...retrying again");
+        end
     end
     if(isnan(setRate))
-        error(rateResponse);
+        error("Tried setting sweep rate %d times, still failed. Final response: %s", ...
+            MAX_NUM_ATTEMPTS, rateResponse);
     end
     
     % sweep start/stop settings give a synax error for some reason, TODO

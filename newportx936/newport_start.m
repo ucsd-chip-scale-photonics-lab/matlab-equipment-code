@@ -16,7 +16,12 @@ function np = newport_start()
     % get device ID of first one (for now, assume we only talk to 1 box)
     np.ID = alDevInfoList.Item(0).ID;
     % query ID to final confirm connection
-    disp(newport_query(np, "*IDN?"));
+    response = newport_query(np, "*IDN?");
+    if(response == "")
+        error("Newport returning blank messages upon queries, the cause of this issue has not yet been identified. Please restart MATLAB and try again.");
+    else
+        disp(response);
+    end
     % set units to watts, which is what is assumed throughout our code
     newport_write(np, "PM:UNITS 2"); % 2 = Watts
 end
