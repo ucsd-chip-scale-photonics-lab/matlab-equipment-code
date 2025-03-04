@@ -7,19 +7,22 @@ else
 end
 %%
 figure; hold on; 
+colors = cool(numFiles);
+colororder(colors);
 for i = 1:numFiles
     clear channel1 channel2 lambdaArray
-    load(fullfile(location, file{i}), 'channel1', 'channel2', 'lambdaArray', 'V_measure', 'I_measure');
+    load(fullfile(location, file{i}), 'channel1', 'channel2', 'lambdaArray');
     %plot(lambdaArray, 10*log10(channel1), 'DisplayName', file{i});
     %plot_name = sprintf('%1.2f mW', V_measure*I_measure);
     plot_name = file{i};
-    plot(lambdaArray, 10*log10(channel1) +30, 'DisplayName', plot_name);
+    plot(lambdaArray, 10*log10(channel1) + 30, 'DisplayName', plot_name);
+    %plot(lambdaArray, 10*log10(channel1./blank_channel1), 'DisplayName', plot_name);
     %plot(lambdaArray, 10*log10(channel1/max(channel1)), 'DisplayName', plot_name);
 end
 hold off;
 l = legend();
 %set(l, "Interpreter", "none");
-xlabel("Wavelength (nm)"); ylabel("Transmission (dB)");
+xlabel("Wavelength (nm)"); ylabel("Power (dBm)");
 %% FFTs
 figure; 
 for i = 1:numFiles

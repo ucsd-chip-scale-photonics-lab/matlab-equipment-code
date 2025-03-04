@@ -1,5 +1,5 @@
 function ven = venturi_start()
-    ven = visa('agilent','GPIB1::4::INSTR');
+    ven = visa('agilent','GPIB3::4::INSTR');
     ven.InputBufferSize = 5000;   % set input buffer
     ven.OutputBufferSize = 5000;  % set output buffer
     ven.Timeout=10; % set maximum waiting time [s]  

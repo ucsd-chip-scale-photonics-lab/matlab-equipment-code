@@ -1,5 +1,5 @@
 function anr = anritsu_start()
-    anr = visa('agilent','GPIB1::29::INSTR');
+    anr = visa('agilent','GPIB3::29::INSTR');
     anr.InputBufferSize = 1e6;   % set input buffer
     anr.OutputBufferSize = 1e6;  % set output buffer
     anr.Timeout=10; % set maximum waiting time [s]  

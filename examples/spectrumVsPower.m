@@ -1,21 +1,23 @@
 %%
 clear; delete(instrfindall);
+ven = venturi_start();
 key = key_start();
+agi = agilent816x_start();
 %%
 
-key_auto_ohm(key, true);
+key_auto_ohm(key, false);
 key_output(key, true);
 pause(1);
 heater_R = key_measure_resistance(key);
 key_output(key, false);
 
 %% Setup sweep
-startWavelength = 1540; % nm
-stopWavelength = 1560; % nm
-sweepRate = 10; % nm/s
-wavelengthStep = 0.001; 
+startWavelength = 1520; % nm
+stopWavelength = 1630; % nm
+sweepRate = 50; % nm/s
+wavelengthStep = 0.01; 
 laserPower = 5; % dBm, 0 to 9.9
-powerMeterRange1 = -20; % dBm, multiples of 10 from -60 to 10
+powerMeterRange1 = -30; % dBm, multiples of 10 from -60 to 10
 powerMeterRange2 = 10; % dBm, multiples of 10 from -60 to 10
 
 venturi_set_power(ven, laserPower);
@@ -33,9 +35,9 @@ agi_set_range(agi, powerMeterRange1, DetectorChannel = 1);
 agi_set_range(agi, powerMeterRange2, DetectorChannel = 2);
 agi_setup_logging(agi, numPts, DetectorIntTime=avgTime);
 %%
-P_desired = (0:20:100)*1e-3;
+P_desired = (0:.5:7.5)*1e-3;
 I_supply = sqrt(P_desired/heater_R);
-P_max = 100e-3;
+P_max = max(P_desired);
 V_compliance = sqrt(P_max*heater_R);
 key_auto_ohm(key, false);
 key_config_I_source(key, V_compliance);
@@ -49,7 +51,9 @@ end
 
 key_set_I(key, 0);
 key_output(key, true);
+figure; hold on;
 for heater_idx = 1:length(I_supply)
+    pause(5);
     this_P = P_desired(heater_idx);
     key_set_I(key, 1000*I_supply(heater_idx));
     pause(1);
@@ -73,5 +77,6 @@ for heater_idx = 1:length(I_supply)
     this_filename = sprintf('%s_%f.mat', file_prefix, this_P);
     save(fullfile(save_dir, this_filename), ...
         'channel1', 'channel2', 'lambdaArray', 'this_P', 'V_measure', 'I_measure');
+    plot(lambdaArray, channel1); drawnow;
 end
 key_output(key, false);

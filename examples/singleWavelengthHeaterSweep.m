@@ -1,14 +1,15 @@
 %% Program to acquire single wavelength transmission vs. heater tuning
 % Program can be safely run in full or in sections
 %% %% Initialize Connections to Laser and Power Supply %% %%
+clear;
 delete (instrfindall); % Delete all existing instruments
-laser = start_laser(); % Initialize and connect laser
+agi = agilent816x_start(); % Initialize and connect laser
 key = key_start(); % Initialize and connect keithley
 
 %% %% Acquisition Settings %% %%
 % Laser source settings
-lambda = 1550; % nm, minimum 1454, maximum 1641
-laser_power = 0;  % dBm, min -10 and max 13 (output 2)
+% lambda = 1630; % nm, minimum 1454, maximum 1641
+%laser_power = 0;  % dBm, min -10 and max 13 (output 2)
 
 % Power supply settings
 % power supply mode (copied from SweepMode.m)
@@ -22,7 +23,7 @@ laser_power = 0;  % dBm, min -10 and max 13 (output 2)
 sweep_mode = SweepMode.power;
 
 % time to wait after changing power supply prior to taking measurements
-heater_settle_time = 5; % seconds
+heater_settle_time = 0; % seconds
 
 % voltage sweep settings (only used if mode is SweepMode.voltage)
 V_start = 0; % volts
@@ -36,13 +37,13 @@ I_step = 10; % mA
 
 % power sweep settings (only used if mode is SweepMode.power)
 P_start = 0; % mW
-P_end = 50; % mW
-P_step = 5; % mW
+P_end = 20; % mW
+P_step = 0.1; % mW
 
 % complaince settings - Keithley output will never exceed either of these,
 % regardless of the sweep mode!
 I_compliance = 1; % mA
-V_compliance = 50; % volts
+V_compliance = 25; % volts
 
 
 %% %% Run Acquisition %% %%
@@ -53,14 +54,14 @@ V_compliance = 50; % volts
 % use or modify any variables those have to be global
 global global_params;
 global_params = struct;
-global_params.laser = laser;
+global_params.agi = agi;
 global_params.results = [];
 
 % set laser params
-laser_set_basic_params(laser, laser_power, lambda);
+%laser_set_basic_params(laser, laser_power, lambda);
 
 % turn on laser
-laser_output(laser, true);
+%laser_output(laser, true);
 
 % use same function handle for optical measurement but switch sweep type
 % Matlab is annoying and requires this function definition to be at the end
@@ -85,7 +86,7 @@ switch(sweep_mode)
 end
 
 % turn off laser
-laser_output(laser, false);
+agi_output(agi, false);
 %% %% Save Result %% %%
 % Saves all variables into .mat file (locat. picked using GUI)
 % Variables that are probably the most useful:
@@ -102,10 +103,10 @@ else
 end
 
 %% %% Plot Result %% %%
-laser_power_mW = 10^(laser_power/10);
-plot(measured_P, 10*log10(global_params.results/laser_power_mW));
+%laser_power_mW = 10^(laser_power/10);
+plot(measured_P, 10*log10(global_params.results) + 30);
 xlabel("Heater Power (mW)");
-ylabel("Transmission (dB)");
+ylabel("Power (dBm)");
 %% Helper functions
 % single re-usable function to perform spectrum measurement and save
 % result to global variable
@@ -113,5 +114,5 @@ function doSingleWavelengthMeasurement()
     % get access to global struct for this function
     global global_params
     % add to results
-    global_params.results = [global_params.results laser_get_power(global_params.laser)];
+    global_params.results = [global_params.results agi_get_power(global_params.agi)];
 end

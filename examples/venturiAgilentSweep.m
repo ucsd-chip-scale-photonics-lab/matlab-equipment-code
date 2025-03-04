@@ -2,15 +2,15 @@
 % dual-channel power meters (81635) on Agilent 8164B slot 2
 clear; delete(instrfindall);
 ven = venturi_start();
-agi = agilent816x_start(Address = 'GPIB1::20::INSTR'); % legacy function name, not using laser on Agilent
+agi = agilent816x_start(Address = 'GPIB3::20::INSTR'); % legacy function name, not using laser on Agilent
 %% Setup sweep
 startWavelength = 1520; % nm
 stopWavelength = 1630; % nm
 sweepRate = 10; % nm/s
-wavelengthStep = 0.1; 
+wavelengthStep = 0.01; 
 laserPower = 5; % dBm, 0 to 9.9
-powerMeterRange1 = -10; % dBm, multiples of 10 from -60 to 10
-powerMeterRange2 = 10; % dBm, multiples of 10 from -60 to 10
+powerMeterRange1 = -20; % dBm, multiples of 10 from -60 to 10
+powerMeterRange2 = -10; % dBm, multiples of 10 from -60 to 10
 
 
 venturi_set_power(ven, laserPower);
@@ -44,8 +44,8 @@ else
 end
 %%
 figure; hold on;
-plot(lambdaArray, 10*log10(abs(channel1)) + 30 - laserPower,'k.-');
-%plot(lambdaArray, 10*log10(channel2) + 30);
+plot(lambdaArray, 10*log10(abs(channel1)) + 30,'k.-');
+%plot(lambdaArray, 10*log10(channel2) + 30, 'b.-');
 hold off;
 xlabel("Wavelength");
 ylabel("Transmission (dB)");
