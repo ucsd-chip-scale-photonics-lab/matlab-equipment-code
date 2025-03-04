@@ -2,6 +2,11 @@ classdef NKTControl < handle
     %NKTControl Class to control super continuum (SuperK) lasers from NKT.
     %
     % Copied from https://github.com/villadsegede/NKTcontrol
+    % Main modifications:
+    % - added "SELECT" AOTF compatibility, we don't have a VARIA
+    %  - this requires you to set wavelength on the RF driver's address,
+    %  not the SELECT's address
+    % 
     %
     % This class uses the serial communication (virtually through a USB
     % connection) to communicate with NKT SuperK Extreme products and may
@@ -126,6 +131,9 @@ classdef NKTControl < handle
             timeout=obj.timeout;
         end
         
+
+        function output = getStatusInternal(obj, addr)
+            % obtains the status of the 
         
         function output = getStatus(obj)
             %getStatus Obtains the status of the laser.
@@ -199,6 +207,7 @@ classdef NKTControl < handle
             end
         end
            
+
         
         function [] = resetInterlock(obj)
             %resetInterlock Resets the interlock circuit.
@@ -469,6 +478,12 @@ classdef NKTControl < handle
      addrLaser='0F';
      %Varia address: value of address switch on varia +10
      addrVaria='10';
+     % SELECT address
+     addrSelect = '10';
+     % RF driver 1 address
+     addrRF1 = '11';
+     % RF driver 2 address
+     addrRF2 = '12';
      %Host Host address: can be anything greater than 160 (A0)
      host='A2';
      %Message type = read
