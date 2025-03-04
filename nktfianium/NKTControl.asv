@@ -409,14 +409,7 @@ classdef NKTControl < handle
         end
 
         % * getWavelengthRange
-        function [lowerLambda, upperLambda] = getWavelengthRange(obj, options)
-            arguments
-                obj
-                options.RFChannel = 1
-            end
-            sendAddr = getRFAddr(obj, options.RFChannel);
-            sendRegister = '34';
-        end
+        function [] = 
 
         % * setRFWavelength
         %function [] = setRFWavelength(obj, )
@@ -432,23 +425,6 @@ classdef NKTControl < handle
 
 
     methods(Access=private)
-        % Slightly higher level: read and write from registers with some
-        % type support
-
-        function [] = writeRegister(obj, address, register, value)
-            sendData = [register; value];
-            obj.sendTelegram(address, obj.msgWrite, sendData);
-            obj.getTelegram(8); 
-        end
-
-        function [] = readRegister(obj, address, register, type)
-            obj.sendTelegram(address,obj.msgRead,register);
-            % should we always actually do 10 here?
-            out=obj.getTelegram(10);
-            hexdata=[out(7,:) out(6,:)];
-            decdata=hex2dec(hexdata);
-        end
-
         % Lowest level of abstraction: send and get telegrams
         function [] = sendTelegram(obj,address,msgType,data)
             % sendTelegram sends a telegram to the laser
