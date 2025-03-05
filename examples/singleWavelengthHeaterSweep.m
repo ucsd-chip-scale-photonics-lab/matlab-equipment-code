@@ -19,7 +19,7 @@ key = key_start(); % Initialize and connect keithley
 %       This is done with a non-uniform voltage sweep.
 %       A warning will be issued after measuring the load impedance if the
 %       power sweep will exceed either the compliance voltage or current
-
+key_auto_ohm(key, false);
 sweep_mode = SweepMode.power;
 
 % time to wait after changing power supply prior to taking measurements
@@ -37,13 +37,13 @@ I_step = 10; % mA
 
 % power sweep settings (only used if mode is SweepMode.power)
 P_start = 0; % mW
-P_end = 20; % mW
+P_end = 10; % mW
 P_step = 0.1; % mW
 
 % complaince settings - Keithley output will never exceed either of these,
 % regardless of the sweep mode!
-I_compliance = 1; % mA
-V_compliance = 25; % volts
+I_compliance = 10; % mA
+V_compliance = 2; % volts
 
 
 %% %% Run Acquisition %% %%

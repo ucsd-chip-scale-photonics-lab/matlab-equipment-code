@@ -56,6 +56,17 @@ classdef NKTControl < handle
     
     properties
      timeout=0.05; %Timeout in seconds for the serial port.   
+     % having these public can be handy
+          %Laser address
+     addrLaser='0F';
+     %Varia address: value of address switch on varia +10
+     addrVaria='10';
+     % SELECT address
+     addrSelect = '10';
+     % RF driver 1 address
+     addrRF1 = '11';
+     % RF driver 2 address
+     addrRF2 = '12';
     end
     properties (Access=private)  
         s;      %Serial communication object.
@@ -76,6 +87,7 @@ classdef NKTControl < handle
             %Find serial ports
             serialInfo = instrhwinfo('serial');
             ports=serialInfo.AvailableSerialPorts;
+            didLaserConnect = false;
             for n=1:length(ports)
                 obj.s=serial(ports(n),'BaudRate',115200,'Timeout',obj.timeout);
                 fopen(obj.s);
@@ -91,6 +103,7 @@ classdef NKTControl < handle
                     continue
                 elseif out(1,:)==obj.startTel
                     disp('Laser connected');
+                    didLaserConnect = true;
                     break
                 else
                     fclose(obj.s);
@@ -98,6 +111,9 @@ classdef NKTControl < handle
                     clear obj.s
                     continue
                 end
+            end
+            if(~didLaserConnect)
+                warning("Laser did not connect, check laser is on and connected.");
             end
             warning on MATLAB:serial:fread:unsuccessfulRead
         end
@@ -409,7 +425,14 @@ classdef NKTControl < handle
         end
 
         % * getWavelengthRange
-        function [] = 
+        function [lowerLambda, upperLambda] = getWavelengthRange(obj, options)
+            arguments
+                obj
+                options.RFChannel = 1
+            end
+            sendAddr = getRFAddr(obj, options.RFChannel);
+            sendRegister = '34';
+        end
 
         % * setRFWavelength
         %function [] = setRFWavelength(obj, )
@@ -418,6 +441,55 @@ classdef NKTControl < handle
         % * setRFPower
         
             
+
+        function [] = writeRegister(obj, address, register, value, type)
+            % convert values
+            switch type
+                case 'uint8'
+                    numBytes = 1;
+                case 'uint16'
+                    numBytes = 2;
+                case 'uint32'
+                    numBytes = 4;
+                otherwise
+                    error('Unknown type %s', type)
+            end
+            sendData = [register; valueHex];
+            obj.sendTelegram(address, obj.msgWrite, sendData);
+            obj.getTelegram(8); % why???
+        end
+
+        function out = readRegister(obj, address, register, type)
+            obj.sendTelegram(address,obj.msgRead,register);
+            switch type
+                case 'uint8'
+                    numBytes = 1;
+                case 'uint16'
+                    numBytes = 2;
+                case 'uint32'
+                    numBytes = 4;
+%                 case 'uint32x4' % array of 4 uint32's, kinda hacky
+%                     numBytes = 4*4;
+                otherwise
+                    error('Unknown type %s', type)
+            end
+            readLength = 8+numBytes;
+            
+            out=obj.getTelegram(readLength);
+
+            switch type
+                case 'uint8'
+                    hexdata=[out(6,:)];
+                    out = hex2dec(hexdata);
+                case 'uint16'
+                    hexdata=[out(7,:) out(6,:)];
+                    out = hex2dec(hexdata);
+                case 'uint32'
+                    hexdata=[out(9,:) out(8,:) out(7,:) out(6,:)];
+                    out = hex2dec(hexdata);
+            end
+        end
+
         % Private methods
     end
     
@@ -425,6 +497,11 @@ classdef NKTControl < handle
 
 
     methods(Access=private)
+        % Slightly higher level: read and write from registers with some
+        % type support
+
+
+
         % Lowest level of abstraction: send and get telegrams
         function [] = sendTelegram(obj,address,msgType,data)
             % sendTelegram sends a telegram to the laser
@@ -541,16 +618,7 @@ classdef NKTControl < handle
      startTel='0D';
      %End of telegram
      endTel='0A';
-     %Laser address
-     addrLaser='0F';
-     %Varia address: value of address switch on varia +10
-     addrVaria='10';
-     % SELECT address
-     addrSelect = '10';
-     % RF driver 1 address
-     addrRF1 = '11';
-     % RF driver 2 address
-     addrRF2 = '12';
+
      %Host Host address: can be anything greater than 160 (A0)
      host='A2';
      %Message type = read
