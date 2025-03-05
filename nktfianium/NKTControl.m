@@ -92,8 +92,6 @@ classdef NKTControl < handle
             %serialInfo = instrhwinfo('serial');
             ports=serialportlist; %serialInfo.AvailableSerialPorts;
             didLaserConnect = false;
-
-            
             obj.s = serialport(options.Port, 115200);
             data='30';
             % Send telegram to laser and see if it replies.
@@ -115,36 +113,6 @@ classdef NKTControl < handle
             if(~didLaserConnect)
                 warning("Laser did not connect, check laser is on and connected.");
             end
-            % deprecated auto-connect functionality
-%             for n=1:length(ports)
-%                 %obj.s=serial(ports(n),'BaudRate',115200,'Timeout',obj.timeout);
-%                 obj.s = serialport(ports(n), 115200);
-%                 %fopen(obj.s);
-%                 data='30';
-%                 % Send telegram to laser and see if it replies.
-%                 %If there is a reply starting with '0A' the laser is connected.
-%                 obj.sendTelegram(obj.addrLaser,obj.msgRead,data);
-%                 out=dec2hex(read(obj.s,9, 'uint8'),2);
-%                 if isempty(out)==1
-%                     %fclose(obj.s);
-%                     delete(obj.s);
-%                     clear obj.s
-%                     continue
-%                 elseif out(1,:)==obj.startTel
-%                     disp('Laser connected');
-%                     didLaserConnect = true;
-%                     break
-%                 else
-%                     %fclose(obj.s);
-%                     delete(obj.s);
-%                     clear obj.s
-%                     continue
-%                 end
-%             end
-%             if(~didLaserConnect)
-%                 warning("Laser did not connect, check laser is on and connected.");
-%             end
-%             warning on MATLAB:serial:fread:unsuccessfulRead
         end
         
         
@@ -211,7 +179,7 @@ classdef NKTControl < handle
 %             end
 %         end
         
-        function output = getStatus(obj)
+        function output = getLaserStatus(obj)
             %getStatus Obtains the status of the laser.
             %
             % Checks whether the serial port is open, whether emission is on
@@ -294,24 +262,16 @@ classdef NKTControl < handle
         end
         
         
-        function [] = emissionOn(obj)
-            % emissionOn Turns emission on.
-            %
-            % see also: emissionOff
-            
-            data=['30'; '03'];
-            obj.sendTelegram(obj.addrLaser,obj.msgWrite,data);
-            obj.getTelegram(8);
-        end
-        
-        function [] = emissionOff(obj)
-            % emissionOff Turns emission off.
-            %
-            % see also: emissionOn
-            
-            data=['30'; '00'];
-            obj.sendTelegram(obj.addrLaser,obj.msgWrite,data);
-            obj.getTelegram(8);
+        function [] = enableLaser(obj, doOutput)
+            if doOutput, sendValue = 3; else, sendValue = 0; end
+            obj.writeRegister(obj.addrLaser, '30', sendValue, 'uint8');
+            pause(1); % we could optimized this away but ehhhhh
+            % TODO show error if interlock is on
+            reply = obj.readRegister(obj.addrLaser, '30', 'uint8');
+            if(doOutput == true && reply ~= 3)
+                warning("Laser not enabled, interlock likely on");
+            end
+            %obj.getLaserStatus;
         end
         
         function powerLevel = getPowerLevel(obj)
@@ -448,14 +408,8 @@ classdef NKTControl < handle
                 options.RFChannel = 1
             end
             thisAddr = getRFAddr(obj, options.RFChannel);
-
-            
-            sendRegister = '30';
             if doEnable, sendValue = 1; else, sendValue = 0; end
             obj.writeRegister(thisAddr, '30', sendValue, 'uint8');
-            %sendData = [sendRegister; sendValue];
-            %obj.sendTelegram(thisAddr, obj.msgWrite, sendData);
-            %obj.getTelegram(8);
         end
 
         % * getWavelengthRange
@@ -498,12 +452,38 @@ classdef NKTControl < handle
             end
         end
 
-
         % * setRFPower
         
+        function replyPower = setRFPower(obj, powerSet, options)
+            arguments
+                obj
+                powerSet % in percent
+                options.RFChannel = 1
+                options.WavelengthChannel {mustBeInteger} = 0
+            end
+            % verify we're within range
+            if(powerSet < 0 || powerSet > 100)
+                error('Desired RF power %f outside limits [0, 100]', powerSet);
+            end
+            if(options.WavelengthChannel < 0 || options.WavelengthChannel > 7)
+                error('Specified wavelength channel %d outside limits [0,7]');
+            end
+            % send it, register numbers count up with wavelength channel
+            thisAddr = getRFAddr(obj, options.RFChannel);
+            % note that the registers store it as 1/10 of a percent!
+            sendRegister = dec2hex(hex2dec('B0') + options.WavelengthChannel);
+            obj.writeRegister(thisAddr, sendRegister, 1e1*powerSet, 'uint16')
+            % check it
+            replyPower = 1e-1*obj.readRegister(thisAddr, sendRegister, 'uint16');
+            POWER_TOLERANCE = 1e-1; % we accept up to 0.1% deviation
+            if(abs(replyPower-powerSet) > POWER_TOLERANCE)
+                warning('Power response from SELECT %f not equal to specified power %f', replyPower, powerSet);
+            end
+        end
             
 
         function [] = writeRegister(obj, address, register, value, type)
+            
             % convert values
             switch type
                 case 'uint8'
@@ -520,7 +500,8 @@ classdef NKTControl < handle
             valueHex = flipud(reshape(valueHex, 2, [])'); 
             sendData = [register; valueHex];
             obj.sendTelegram(address, obj.msgWrite, sendData);
-            obj.getTelegram(8); % why???
+            %obj.getTelegram(8); % why???
+            flush(obj.s);
         end
 
         function out = readRegister(obj, address, register, type)
