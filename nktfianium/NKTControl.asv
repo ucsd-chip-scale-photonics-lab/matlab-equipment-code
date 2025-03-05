@@ -74,7 +74,11 @@ classdef NKTControl < handle
     
     methods 
     %Public methods
-        function [] = connect(obj)
+    function [] = connect(obj, options)
+        arguments
+            obj
+            options.Port = 'COM9'
+        end
             % connect Connects to the laser.
             %
             % Detects which serial ports are available and tries to connect
@@ -83,39 +87,64 @@ classdef NKTControl < handle
             %
             % see also: disconnect
             
-            warning off MATLAB:serial:fread:unsuccessfulRead;
+%             warning off MATLAB:serial:fread:unsuccessfulRead;
             %Find serial ports
-            serialInfo = instrhwinfo('serial');
-            ports=serialInfo.AvailableSerialPorts;
+            %serialInfo = instrhwinfo('serial');
+            ports=serialportlist; %serialInfo.AvailableSerialPorts;
             didLaserConnect = false;
-            for n=1:length(ports)
-                obj.s=serial(ports(n),'BaudRate',115200,'Timeout',obj.timeout);
-                fopen(obj.s);
-                data='30';
-                % Send telegram to laser and see if it replies.
-                %If there is a reply starting with '0A' the laser is connected.
-                obj.sendTelegram(obj.addrLaser,obj.msgRead,data);
-                out=dec2hex(fread(obj.s,9),2);
-                if isempty(out)==1
-                    fclose(obj.s);
-                    delete(obj.s);
-                    clear obj.s
-                    continue
-                elseif out(1,:)==obj.startTel
-                    disp('Laser connected');
-                    didLaserConnect = true;
-                    break
-                else
-                    fclose(obj.s);
-                    delete(obj.s);
-                    clear obj.s
-                    continue
-                end
+
+            
+            obj.s = serialport(options.Port, 115200);
+            data='30';
+            % Send telegram to laser and see if it replies.
+            %If there is a reply starting with '0A' the laser is connected.
+            obj.sendTelegram(obj.addrLaser,obj.msgRead,data);
+            out=dec2hex(read(obj.s,9, 'uint8'),2);
+            if isempty(out)==1
+                %fclose(obj.s);
+                delete(obj.s);
+                clear obj.s
+            elseif out(1,:)==obj.startTel
+                disp('Laser connected');
+                didLaserConnect = true;
+            else
+                %fclose(obj.s);
+                delete(obj.s);
+                clear obj.s
             end
             if(~didLaserConnect)
                 warning("Laser did not connect, check laser is on and connected.");
             end
-            warning on MATLAB:serial:fread:unsuccessfulRead
+            % deprecated auto-connect functionality
+%             for n=1:length(ports)
+%                 %obj.s=serial(ports(n),'BaudRate',115200,'Timeout',obj.timeout);
+%                 obj.s = serialport(ports(n), 115200);
+%                 %fopen(obj.s);
+%                 data='30';
+%                 % Send telegram to laser and see if it replies.
+%                 %If there is a reply starting with '0A' the laser is connected.
+%                 obj.sendTelegram(obj.addrLaser,obj.msgRead,data);
+%                 out=dec2hex(read(obj.s,9, 'uint8'),2);
+%                 if isempty(out)==1
+%                     %fclose(obj.s);
+%                     delete(obj.s);
+%                     clear obj.s
+%                     continue
+%                 elseif out(1,:)==obj.startTel
+%                     disp('Laser connected');
+%                     didLaserConnect = true;
+%                     break
+%                 else
+%                     %fclose(obj.s);
+%                     delete(obj.s);
+%                     clear obj.s
+%                     continue
+%                 end
+%             end
+%             if(~didLaserConnect)
+%                 warning("Laser did not connect, check laser is on and connected.");
+%             end
+%             warning on MATLAB:serial:fread:unsuccessfulRead
         end
         
         
@@ -125,7 +154,7 @@ classdef NKTControl < handle
             %
             % see also: connect
             
-            fclose(obj.s);
+            %fclose(obj.s);
             delete(obj.s);
             clear obj.s
             disp('Laser disconnected');
@@ -159,28 +188,28 @@ classdef NKTControl < handle
         end
         
 
-        function output = getStatusInternal(obj, addr)
-            % obtains the status of the equipment at given address
-            statusRegister='66';
-            obj.sendTelegram(addr,obj.msgRead,statusRegister);
-            out=obj.getTelegram(10);
-            hexdata=[out(7,:) out(6,:)];
-            decdata=hex2dec(hexdata);
-            status=[dec2bin(decdata,16)];
-            output=[status(16), status(15), status(9)];
-            disp(['Com port ' obj.s.status]);
-            if status(16)=='1'
-                disp('Emission on');
-            else disp('Emission off');
-            end
-            if status(15)=='0'
-                disp('Interlock on');
-            else disp('Interlock needs resetting');
-            end
-            if status(9)=='1' 
-                disp('Clock battery voltage low');
-            end
-        end
+%         function output = getStatusInternal(obj, addr)
+%             % obtains the status of the equipment at given address
+%             statusRegister='66';
+%             obj.sendTelegram(addr,obj.msgRead,statusRegister);
+%             out=obj.getTelegram(10);
+%             hexdata=[out(7,:) out(6,:)];
+%             decdata=hex2dec(hexdata);
+%             status=[dec2bin(decdata,16)];
+%             output=[status(16), status(15), status(9)];
+%             disp(['Com port ' obj.s.status]);
+%             if status(16)=='1'
+%                 disp('Emission on');
+%             else disp('Emission off');
+%             end
+%             if status(15)=='0'
+%                 disp('Interlock on');
+%             else disp('Interlock needs resetting');
+%             end
+%             if status(9)=='1' 
+%                 disp('Clock battery voltage low');
+%             end
+%         end
         
         function output = getStatus(obj)
             %getStatus Obtains the status of the laser.
@@ -202,7 +231,7 @@ classdef NKTControl < handle
             decdata=hex2dec(hexdata);
             status=[dec2bin(decdata,16)];
             output=[status(16), status(15), status(9)];
-            disp(['Com port ' obj.s.status]);
+            disp(['Com port ' obj.s.Port]);
             if status(16)=='1'
                 disp('Emission on');
             else disp('Emission off');
@@ -404,6 +433,8 @@ classdef NKTControl < handle
 
         % SELECT rf driver methods
         % all of these have an 'RFChannel' option to select which RF source
+        % also note that all of these are natively in units of pm!
+        % we convert to and from nm for interfacing
 
         function addr = getRFAddr(obj, RFChannel)
             if RFChannel == 1, addr = obj.addrRF1; else, addr = obj.addrRF2; end
@@ -416,11 +447,11 @@ classdef NKTControl < handle
                 doEnable
                 options.RFChannel = 1
             end
-            sendAddr = getRFAddr(obj, options.RFChannel);
+            thisAddr = getRFAddr(obj, options.RFChannel);
             sendRegister = '30';
             if doEnable, sendValue = '01'; else, sendValue = '00'; end
             sendData = [sendRegister; sendValue];
-            obj.sendTelegram(sendAddr, obj.msgWrite, sendData);
+            obj.sendTelegram(thisAddr, obj.msgWrite, sendData);
             obj.getTelegram(8);
         end
 
@@ -430,12 +461,39 @@ classdef NKTControl < handle
                 obj
                 options.RFChannel = 1
             end
-            sendAddr = getRFAddr(obj, options.RFChannel);
-            sendRegister = '34';
+            thisAddr = getRFAddr(obj, options.RFChannel);
+            lowerLambda = 1e-3*readRegister(obj, thisAddr, '34', 'uint32');
+            upperLambda = 1e-3*readRegister(obj, thisAddr, '35', 'uint32');
         end
 
         % * setRFWavelength
-        %function [] = setRFWavelength(obj, )
+        function [] = setRFWavelength(obj, lambdaSet, options)
+            arguments
+                obj
+                lambdaSet
+                options.RFChannel = 1
+                options.WavelengthChannel {mustBeInteger} = 0
+            end
+            % verify we're within range
+            [lowerLambda, upperLambda] = getWavelengthRange(obj, ...
+                RFChannel=options.RFChannel);
+            if(lambdaSet < lowerLambda || lambdaSet > upperLambda)
+                error('Desired wavelength %f outside limits [%f, %f]', lambdaSet, lowerLambda, upperLambda);
+            end
+            if(options.WavelengthChannel < 0 || options.WavelengthChannel > 7)
+                error('Specified wavelength channel %d outside limits [0,7]');
+            end
+            % send it, register numbers count up with wavelength channel
+            thisAddr = getRFAddr(obj, options.RFChannel);
+            sendRegister = dec2hex(hex2dec('90') + options.WavelengthChannel);
+            nkt.writeRegister(thisAddr, sendRegister, 1e3*lambdaSet, 'uint32')
+            % check it
+            replyLambda = 1e-3*nkt.readRegister(thisAddr, sendRegister, 'uint32');
+            LAMBDA_TOLERANCE = 1e-3; % we accept up to 2 pm deviation
+            if(abs(replyLambda-lambdaSet) > LAMBDA_TOLERANCE)
+                warning('Wavelength response from SELECT %f not equal to specified wavelength %f', replyLambda, lambdaSet);
+                
+        end
 
 
         % * setRFPower
@@ -454,12 +512,18 @@ classdef NKTControl < handle
                 otherwise
                     error('Unknown type %s', type)
             end
+            valueHex = dec2hex(value, 2*numBytes);
+            % make into a column of hex bytes with proper byte order
+            valueHex = flipud(reshape(valueHex, 2, [])'); 
             sendData = [register; valueHex];
             obj.sendTelegram(address, obj.msgWrite, sendData);
             obj.getTelegram(8); % why???
         end
 
         function out = readRegister(obj, address, register, type)
+            % flush serial buffer, in case the previous read didn't finish
+            % the message we don't want that buffer leaking into this one
+            flush(obj.s);
             obj.sendTelegram(address,obj.msgRead,register);
             switch type
                 case 'uint8'
@@ -474,19 +538,28 @@ classdef NKTControl < handle
                     error('Unknown type %s', type)
             end
             readLength = 8+numBytes;
-            
-            out=obj.getTelegram(readLength);
+            %readLength = 100;
+            reply=obj.getTelegram(readLength);
 
             switch type
                 case 'uint8'
-                    hexdata=[out(6,:)];
+                    hexdata=[reply(6,:)];
                     out = hex2dec(hexdata);
                 case 'uint16'
-                    hexdata=[out(7,:) out(6,:)];
+                    hexdata=[reply(7,:) reply(6,:)];
                     out = hex2dec(hexdata);
                 case 'uint32'
-                    hexdata=[out(9,:) out(8,:) out(7,:) out(6,:)];
+                    hexdata=[reply(9,:) reply(8,:) reply(7,:) reply(6,:)];
                     out = hex2dec(hexdata);
+%                 case 'uint32x4' % array of 4 uint32's, kinda hacky
+%                     out = zeros(1,4);
+%                     for i = 0:3
+%                         hexdata=[reply(9 + 4*i,:), ...
+%                                     reply(8 + 4*i,:), ...
+%                                     reply(7 + 4*i,:), ...
+%                                     reply(6 + 4*i,:)];
+%                         out(i+1) = hex2dec(hexdata);
+%                     end
             end
         end
 
@@ -541,7 +614,7 @@ classdef NKTControl < handle
                 end
             end
             out(length(out)+1,:)=obj.endTel;%end of transmission
-            fwrite(obj.s,hex2dec(out),'uint8'); %send to laser
+            write(obj.s,hex2dec(out),'uint8'); %send to laser
         end
         
         
@@ -556,7 +629,7 @@ classdef NKTControl < handle
             %
             % seeAlso sendTelegram
             
-            received=fread(obj.s,size);
+            received=read(obj.s,size, 'uint8');
             %replace any special characters in the telegram. m counts the number of special
             %characters as this shifts the subsequent rows of the array
             t=dec2hex(received,2);%telegram in hexadecimal
@@ -580,7 +653,7 @@ classdef NKTControl < handle
             %check if transmission is complete and receive any additional
             %bytes if necessary 
             while out(length(out),:)~=obj.endTel 
-                out(length(out)+1,:)=dec2hex(fread(obj.s,1),2);
+                out(length(out)+1,:)=dec2hex(read(obj.s,1, 'uint8'),2);
             end
         end 
         
@@ -614,6 +687,7 @@ classdef NKTControl < handle
      %Bytes for the start and end of telegrams and the addresses of the
      %laser, varia, and host.
      
+
      %Start of telegram
      startTel='0D';
      %End of telegram
@@ -625,6 +699,8 @@ classdef NKTControl < handle
      msgRead='04';
      %Message type = write
      msgWrite='05';
+
+     
 %CRC look up table
     Crc_ui16LookupTable=[0,4129,8258,12387,16516,20645,24774,28903,33032,37161,41290,45419,49548,...
     53677,57806,61935,4657,528,12915,8786,21173,17044,29431,25302,37689,33560,45947,41818,54205,...
