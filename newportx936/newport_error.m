@@ -1,5 +1,12 @@
-function newport_error(np)
+function this_error = newport_error(np, options)
+    arguments
+        np
+        options.DoDisplay = true
+    end
     % print last error from error queue
-    newport_query(np, "ERRSTR?")
+    this_error = newport_query(np, "ERRSTR?");
+    if(options.DoDisplay)
+        disp(this_error);
+    end
 end
 

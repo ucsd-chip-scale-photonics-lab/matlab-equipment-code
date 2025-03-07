@@ -10,6 +10,7 @@ function np = newport_start()
     % create object representing ALL newport USB connections
     np.USB = Newport.USBComm.USB();
     % open connection to all devices
+    np.USB.CloseDevices();
     np.USB.OpenDevices(); pause(1);
     % get list of devices
     alDevInfoList = np.USB.GetDevInfoList(); pause(1);

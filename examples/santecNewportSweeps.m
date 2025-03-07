@@ -40,6 +40,7 @@ pause(0.1); TSL.Query(sprintf('SN %.1f',wvSpeed)); % Continous sweep speed (nm/s
 pause(0.1); %TSL.Query(sprintf('TW %.4f',dummy_wvRes)); %0.0015 Trigger step (nm); [0.0001:0.0001:160] <1kHz
 %TSL.Query("WA"+num2str(temp_wvStart,'%.4f')); pause(0.3)
 %% Run scan
+newport_flush(np);
 disp("Performing scan...");
 [lambdaArray, powerArray] = runWavelengthScan(TSL, np, wvStart, wvEnd, wvRes, wvSpeed);
 %% PLOTTING
