@@ -4,6 +4,7 @@ function out = newport_get_data_store(np)
 % so we have to download in several messages
 
     %
+    disp("Downloading Newport data...");
     num_pts = str2double(newport_query(np, "PM:DS:COUNT?"));
     % TODO more robust preallocation size
     buffer1 = System.Text.StringBuilder(65536);

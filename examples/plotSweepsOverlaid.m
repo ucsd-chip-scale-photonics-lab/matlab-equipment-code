@@ -11,11 +11,12 @@ colors = cool(numFiles);
 colororder(colors);
 for i = 1:numFiles
     clear channel1 channel2 lambdaArray
-    load(fullfile(location, file{i}), 'channel1', 'channel2', 'lambdaArray');
+    %load(fullfile(location, file{i}), 'channel1', 'channel2', 'lambdaArray');
+    thisData = load(fullfile(location, file{i}), 'powerArray', 'lambdaArray');
     %plot(lambdaArray, 10*log10(channel1), 'DisplayName', file{i});
     %plot_name = sprintf('%1.2f mW', V_measure*I_measure);
     plot_name = file{i};
-    plot(lambdaArray, 10*log10(channel1) + 30, 'DisplayName', plot_name);
+    plot(thisData.lambdaArray, 10*log10(thisData.powerArray) + 30, 'DisplayName', plot_name);
     %plot(lambdaArray, 10*log10(channel1./blank_channel1), 'DisplayName', plot_name);
     %plot(lambdaArray, 10*log10(channel1/max(channel1)), 'DisplayName', plot_name);
 end
@@ -27,21 +28,29 @@ xlabel("Wavelength (nm)"); ylabel("Power (dBm)");
 figure; 
 for i = 1:numFiles
     clear channel1 channel2 lambdaArray
-    load(fullfile(location, file{i}), 'channel1', 'channel2', 'lambdaArray');
-    thisTransmission = channel1; %./channel2;
+    %load(fullfile(location, file{i}), 'channel1', 'channel2', 'lambdaArray');
+    load(fullfile(location, file{i}), 'powerArray', 'lambdaArray');
+    c = 2.998e8;
+    lambdaArrayMeters = 1e-9*lambdaArray;
+    nuArray = c./lambdaArrayMeters;
+    thisDnu = abs(nuArray(2) - nuArray(1));
+    thisTransmission = powerArray; %./channel2;
     thisTransNorm = thisTransmission; %/max(thisTransmission);
     %thisTransNorm = 10*log10(thisTransmission/max(thisTransmission)); l
     thisFFT = abs(fft(thisTransNorm)).^2;
-    thisDlambda = lambdaArray(2)-lambdaArray(1); % assumes uniform
+    %thisDlambda = lambdaArray(2)-lambdaArray(1); % assumes uniform
+
     N = length(thisFFT);
-    thisFreqAxis = (0:N-1)/(N*thisDlambda); thisMaxN = round(N/2);
-    loglog(thisFreqAxis(1:thisMaxN), thisFFT(1:thisMaxN), 'DisplayName', file{i});
+    thisFreqAxis = (0:N-1)/(N*thisDnu); thisMaxN = round(N/2);
+    thisDistance = c*thisFreqAxis;
+    loglog(thisDistance(1:thisMaxN), thisFFT(1:thisMaxN)./max(thisFFT), 'DisplayName', file{i});
     if(i == 1)
         hold on;
     end
 end
 hold off; legend();
-xlabel("Inverse wavelength units (nm^-1)"); ylabel("Power spectral density");
+xlabel("Distance (m)"); ylabel("Power spectral density");
+
 
 %% low pass filter
 numAvg = 50;
