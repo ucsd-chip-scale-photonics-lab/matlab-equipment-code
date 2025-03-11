@@ -16,7 +16,7 @@ startWavelength = 1520; % nm
 stopWavelength = 1630; % nm
 sweepRate = 50; % nm/s
 wavelengthStep = 0.01; 
-laserPower = 5; % dBm, 0 to 9.9
+laserPower = 9; % dBm, 0 to 9.9
 powerMeterRange1 = -30; % dBm, multiples of 10 from -60 to 10
 powerMeterRange2 = 10; % dBm, multiples of 10 from -60 to 10
 

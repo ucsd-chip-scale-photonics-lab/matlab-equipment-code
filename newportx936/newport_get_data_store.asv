@@ -32,6 +32,7 @@ function out = newport_get_data_store(np, expected_num_points)
         tic
         last_time = toc;
     end
+    tic
     for kk=1:estimated_num_downloads   
         if np.USB.ReadBinary(np.ID,buffer2) ~=0
             break
@@ -40,9 +41,10 @@ function out = newport_get_data_store(np, expected_num_points)
         %pause(0.05)
         
         if(do_progress_bar)
+            if(toc)
             current_percent = 100*kk/estimated_num_downloads;
-            if(toc - last_time > time_update)
-                last_time = toc;
+            if (current_percent - last_percent > percent_step)
+                last_percent = current_percent;
                 fprintf('%2.0f%%..', current_percent);
             end
         end

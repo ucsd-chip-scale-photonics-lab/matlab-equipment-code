@@ -42,7 +42,7 @@ function actual_period = newport_setup_logging(np, numPts, options)
     end
 
     %
-    newport_write(np, sprintf("PM:DS:SIZE %d", numPts));
+    newport_write(np, sprintf("PM:DS:SIZE %.0f", numPts));
     actual_num_pts = str2double(newport_query(np, "PM:DS:SIZE?"));
     if(actual_num_pts ~= numPts)
         warning("Actual number of samples %d does not match requested number %d.", actual_num_pts, numPts);
