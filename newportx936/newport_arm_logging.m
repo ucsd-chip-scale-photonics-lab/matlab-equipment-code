@@ -5,6 +5,7 @@ function newport_arm_logging(np, options)
         np
         % if set to 1 or 2, only one of the channels will be armed
         options.ChannelsToArm (1,1) {mustBeMember(options.ChannelsToArm, [1,2,3])} = 3 
+        options.DoSoftwareTrigger = false
     end
     % clear buffer
     newport_write(np, "PM:DS:CLEAR");
@@ -13,8 +14,12 @@ function newport_arm_logging(np, options)
 
     % ext rising edge starts measurements
     newport_write(np, "PM:TRIG:EDGE 1");
-    newport_write(np, "PM:TRIG:HOLDOFF 0");
-    newport_write(np, "PM:TRIG:START 1"); % 1 = wait to start until trigger occurs
+    newport_write(np, "PM:TRIG:HOLDOFF 0"); % no trigger delay!
+    if(options.DoSoftwareTrigger)
+        newport_write(np, "PM:TRIG:START 3"); % 3 = wait to start until software trigger occurs
+    else
+        newport_write(np, "PM:TRIG:START 1"); % 1 = wait to start until hardware trigger occurs
+    end
     % the buffer just fills up, so we never need to stop measurement - the
     % power meter will just keep running (which is its normal state)
     newport_write(np, "PM:TRIG:STOP 0"); % 0 = measurement never stops

@@ -32,8 +32,9 @@ function out = newport_get_data_store(np, expected_num_points)
         tic
         last_time = toc;
     end
-    for kk=1:estimated_num_downloads   
-        if np.USB.ReadBinary(np.ID,buffer2) ~=0
+    for kk=1:estimated_num_downloads
+        status_code = np.USB.ReadBinary(np.ID,buffer2);
+        if status_code ~=0
             break
         end
         buffer1.Append(buffer2);
@@ -55,6 +56,9 @@ function out = newport_get_data_store(np, expected_num_points)
     end
     
     A = string(buffer1.ToString());
+    if(strcmp(A, ""))
+        error("Newport started returning blank messages when download started, restart matlab and the Newport");
+    end
     B = strsplit(A, '\n');
     data_start_idx = find(contains(B, "End of Header")) + 1;
     data_end_idx = find(contains(B, "End of Data")) - 1;

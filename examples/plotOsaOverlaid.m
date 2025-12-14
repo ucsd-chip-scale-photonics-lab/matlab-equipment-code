@@ -9,12 +9,17 @@ end
 colors = cool(numFiles);
 plot_cropped = false;
 plot_lin = false;
+do_normalize = false;
 figure;
 for i = 1:numFiles
     load(fullfile(location, file{i}), ...
         'osa_lambda', 'osa_power_dbm');
-    osa_power_lin = 10.^(osa_power_dbm/10);
+    if(do_normalize)
+        osa_power_dbm = osa_power_dbm - max(osa_power_dbm);
+    end
+        osa_power_lin = 10.^(osa_power_dbm/10);
     if(plot_lin), plot_data = osa_power_lin; else, plot_data = osa_power_dbm; end
+    
     plot(osa_lambda,plot_data, 'DisplayName', file{i}, ...
         Color = colors(i,:));
     if(i == 1)

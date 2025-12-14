@@ -15,6 +15,9 @@ function np = newport_start()
     % get list of devices
     alDevInfoList = np.USB.GetDevInfoList(); pause(1);
     % get device ID of first one (for now, assume we only talk to 1 box)
+    if(alDevInfoList.Count == 0)
+        error("No newport devices detected, check that the USB is connected. If it is, restart the Newport.")
+    end
     np.ID = alDevInfoList.Item(0).ID;
     % query ID to final confirm connection
     response = newport_query(np, "*IDN?");

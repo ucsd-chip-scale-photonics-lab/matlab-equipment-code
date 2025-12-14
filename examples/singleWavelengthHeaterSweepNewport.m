@@ -1,9 +1,10 @@
 %% Program to acquire single wavelength transmission vs. heater tuning
 % Program can be safely run in full or in sections
 %% %% Initialize Connections to Laser and Power Supply %% %%
-clear;
+clear all;
 delete (instrfindall); % Delete all existing instruments
-agi = agilent816x_start(); % Initialize and connect laser
+%agi = agilent816x_start(); % Initialize and connect laser
+np = newport_start();
 key = key_start(); % Initialize and connect keithley
 
 %% %% Acquisition Settings %% %%
@@ -27,23 +28,23 @@ heater_settle_time = 0; % seconds
 
 % voltage sweep settings (only used if mode is SweepMode.voltage)
 V_start = 0; % volts
-V_end = 10; % volts
+V_end = 25; % volts
 V_step = 1; % volts
 
 % current sweep settings (only used if mode is SweepMode.current)
 I_start = 0; % mA
 I_end = 100; % mA
-I_step = 10; % mA
+I_step = 1; % mA
 
 % power sweep settings (only used if mode is SweepMode.power)
-P_start = 0; % mW
-P_end = 7; % mW
+P_start = 0.0; % mW
+P_end = 4; % mW
 P_step = 0.1; % mW
 
 % complaince settings - Keithley output will never exceed either of these,
 % regardless of the sweep mode!
 I_compliance = 1; % mA
-V_compliance = 15; % volts
+V_compliance = 25; % volts
 
 
 %% %% Run Acquisition %% %%
@@ -54,7 +55,7 @@ V_compliance = 15; % volts
 % use or modify any variables those have to be global
 global global_params;
 global_params = struct;
-global_params.agi = agi;
+global_params.np = np;
 global_params.results = [];
 
 % set laser params
@@ -86,7 +87,7 @@ switch(sweep_mode)
 end
 
 % turn off laser
-agi_output(agi, false);
+%agi_output(agi, false);
 %% %% Save Result %% %%
 % Saves all variables into .mat file (locat. picked using GUI)
 % Variables that are probably the most useful:
@@ -104,9 +105,20 @@ end
 
 %% %% Plot Result %% %%
 %laser_power_mW = 10^(laser_power/10);
+%plot(measured_P, 10*log10(global_params.results) + 30);
 plot(measured_P, 10*log10(global_params.results) + 30);
 xlabel("Heater Power (mW)");
 ylabel("Power (dBm)");
+%xlim([13 17])
+%xlim([0 3.0])
+%% %% Plot Result Vs Voltage %% %%
+%laser_power_mW = 10^(laser_power/10);
+%plot(measured_P, 10*log10(global_params.results) + 30);
+plot(measured_V, 10*log10(global_params.results) + 30);
+xlabel("Heater Voltage (V)");
+ylabel("Power (dBm)");
+%xlim([13 17])
+%xlim([0 3.0])
 %% Helper functions
 % single re-usable function to perform spectrum measurement and save
 % result to global variable
@@ -114,5 +126,5 @@ function doSingleWavelengthMeasurement()
     % get access to global struct for this function
     global global_params
     % add to results
-    global_params.results = [global_params.results agi_get_power(global_params.agi)];
+    global_params.results = [global_params.results newport_get_power(global_params.np)];
 end

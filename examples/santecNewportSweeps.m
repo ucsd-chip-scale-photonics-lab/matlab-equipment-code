@@ -25,7 +25,7 @@ wvRes = 0.01; % nm
 wvStart = 1480; % nm
 wvEnd = 1630; % nm
 wvSpeed = 50; % nm/s
-newport_detector_range = 200e-6; % W
+newport_detector_range = 1e-3; % W
 newport_range(np, newport_detector_range);
 newport_analog_filter(np, 2); % set newport analog filter to 12.5 kHz
 %
@@ -98,7 +98,7 @@ function [lambdaArray, powerArray] = runWavelengthScan(TSL, np, wvStart, wvEnd, 
     
     loggingSuccessful = newport_wait_for_logging(np, EstLoggingTime = max_wait_time);
     if(loggingSuccessful)
-        powerArray = newport_get_data_store(np);
+        powerArray = newport_get_data_store(np, num_power_points);
     else
         warning("Logging did not finish in alloted time.");
     end

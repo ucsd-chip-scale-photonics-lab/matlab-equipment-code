@@ -9,7 +9,7 @@ function didFinish = agi_wait_for_logging(agi, options)
     % once the logging starts, the VISA communication line will become
     % unresponsive until it finishes. So we should increase the VISA
     % timeout to a little more than the estimated duration of logging
-    agi.Timeout = round(options.EstLoggingTime + 3); 
+    agi.Timeout = 200;%round(options.EstLoggingTime + 3); 
     % if the logging starts, it is almost guaranteed that it will
     % eventually finish (in the absense of loss of connection etc.)
 

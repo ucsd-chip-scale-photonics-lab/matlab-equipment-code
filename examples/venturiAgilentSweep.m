@@ -44,8 +44,8 @@ else
 end
 %%
 figure; hold on;
-plot(lambdaArray, 10*log10(abs(channel1)) + 30,'k.-');
-%plot(lambdaArray, 10*log10(channel2) + 30, 'b.-');
+% plot(lambdaArray, 10*log10(abs(channel1)) + 30,'k.-');
+plot(lambdaArray, 10*log10(channel2) + 30, 'b.-');
 hold off;
 xlabel("Wavelength");
 ylabel("Transmission (dB)");

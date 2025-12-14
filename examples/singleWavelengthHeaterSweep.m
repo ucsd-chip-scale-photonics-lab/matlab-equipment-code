@@ -1,7 +1,7 @@
 %% Program to acquire single wavelength transmission vs. heater tuning
 % Program can be safely run in full or in sections
 %% %% Initialize Connections to Laser and Power Supply %% %%
-clear;
+clear all;
 delete (instrfindall); % Delete all existing instruments
 agi = agilent816x_start(); % Initialize and connect laser
 key = key_start(); % Initialize and connect keithley
@@ -36,9 +36,9 @@ I_end = 100; % mA
 I_step = 10; % mA
 
 % power sweep settings (only used if mode is SweepMode.power)
-P_start = 0; % mW
-P_end = 7; % mW
-P_step = 0.1; % mW
+P_start = 0.0; % mW
+P_end = 3.0; % mW
+P_step = 0.005; % mW
 
 % complaince settings - Keithley output will never exceed either of these,
 % regardless of the sweep mode!
@@ -107,6 +107,7 @@ end
 plot(measured_P, 10*log10(global_params.results) + 30);
 xlabel("Heater Power (mW)");
 ylabel("Power (dBm)");
+xlim([0 3.0])
 %% Helper functions
 % single re-usable function to perform spectrum measurement and save
 % result to global variable

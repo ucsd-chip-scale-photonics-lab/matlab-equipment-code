@@ -2,7 +2,7 @@
 clear; delete(instrfindall);
 ven = venturi_start();
 key = key_start();
-agi = agilent816x_start();
+np = newport_start();
 %%
 
 key_auto_ohm(key, false);
@@ -31,11 +31,15 @@ avgTime = wavelengthStep/actualRate;
 numPts = actualRange/wavelengthStep;
 % our array of wavelengths, then, is the CENTER of these gaps!
 lambdaArray = startWavelength + wavelengthStep*(0.5 + 0:(numPts));
-agi_set_range(agi, powerMeterRange1, DetectorChannel = 1);
-agi_set_range(agi, powerMeterRange2, DetectorChannel = 2);
-agi_setup_logging(agi, numPts, DetectorIntTime=avgTime);
+% agi_set_range(agi, powerMeterRange1, DetectorChannel = 1);
+% agi_set_range(agi, powerMeterRange2, DetectorChannel = 2);
+% agi_setup_logging(agi, numPts, DetectorIntTime=avgTime);
+newport_channel(np, 1);
+newportRangeW = 1e-5; % W
+newport_range(np, newportRangeW);
+newport_setup_logging(np, numPts, SamplingPeriod = avgTime);
 %%
-P_desired = (0:.2:2)*1e-3;
+P_desired = (0.6:0.2:1.2)*1e-3;
 I_supply = sqrt(P_desired/heater_R);
 P_max = max(P_desired);
 V_compliance = sqrt(P_max*heater_R);
@@ -62,21 +66,25 @@ for heater_idx = 1:length(I_supply)
     scanTime = numPts*avgTime;
     max_wait_time = scanTime+5; % time to wait for agilent before timing out
     laser.Timeout = max_wait_time;
-    agi_arm_logging(agi, TriggerType = "complete");
+    % agi_arm_logging(agi, TriggerType = "complete");
+    newport_arm_logging(np);
     venturi_output(ven, true);
     venturi_sweep_run(ven);
     venturi_sweep_run(ven);
-    loggingSuccessful = agi_wait_for_logging(agi, EstLoggingTime = max_wait_time);
+    %loggingSuccessful = agi_wait_for_logging(agi, EstLoggingTime = max_wait_time);
+    loggingSuccessful = newport_wait_for_logging(np, EstLoggingTime = max_wait_time);
     if(loggingSuccessful)
-        [channel1, channel2] = agi_get_logging_result(agi);
-        agi_reset_triggers(agi);
+        %[channel1, channel2] = agi_get_logging_result(agi);
+        disp("Downloading Newport data...");
+        channel1 = newport_get_data_store(np, numPts);
+        % agi_reset_triggers(agi);
     else
         warning("Logging did not finish in alloted time.");
     end
     
     this_filename = sprintf('%s_%f.mat', file_prefix, this_P);
     save(fullfile(save_dir, this_filename), ...
-        'channel1', 'channel2', 'lambdaArray', 'this_P', 'V_measure', 'I_measure');
+        'channel1', 'lambdaArray', 'this_P', 'V_measure', 'I_measure');
     plot(lambdaArray, channel1); drawnow;
 end
 key_output(key, false);
